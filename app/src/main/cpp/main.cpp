@@ -21,11 +21,9 @@ public:
     explicit VulkanException(const std::string& message) : std::runtime_error(message) {}
 };
 
-// ВИПРАВЛЕНО: Функція для читання файлів з Android assets
 std::vector<char> readAssetFile(const char* filename) {
     LOGI("Attempting to read asset file: %s", filename);
 
-    // Отримуємо JNI environment
     JNIEnv* env = (JNIEnv*)SDL_GetAndroidJNIEnv();
     if (!env) {
         throw VulkanException("Failed to get JNI environment");
@@ -36,7 +34,6 @@ std::vector<char> readAssetFile(const char* filename) {
         throw VulkanException("Failed to get Android activity");
     }
 
-    // Отримуємо AssetManager
     jclass activityClass = env->GetObjectClass(activity);
     jmethodID getAssets = env->GetMethodID(activityClass, "getAssets", "()Landroid/content/res/AssetManager;");
     jobject assetManager = env->CallObjectMethod(activity, getAssets);
@@ -46,14 +43,12 @@ std::vector<char> readAssetFile(const char* filename) {
         throw VulkanException("Failed to get AssetManager");
     }
 
-    // Відкриваємо файл з assets
     AAsset* asset = AAssetManager_open(mgr, filename, AASSET_MODE_BUFFER);
     if (!asset) {
         LOGE("ERROR: Failed to open asset: %s", filename);
         throw VulkanException(std::string("Failed to open asset: ") + filename);
     }
 
-    // Читаємо дані
     size_t fileSize = AAsset_getLength(asset);
     std::vector<char> buffer(fileSize);
 

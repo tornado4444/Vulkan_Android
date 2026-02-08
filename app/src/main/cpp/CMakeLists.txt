@@ -17,13 +17,9 @@ set(SDL_STATIC OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(${SDL_PATH} SDL-build)
 
-# Налаштування шейдерів
 set(SHADER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 set(SHADER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 
-# ВИПРАВЛЕНО: Правильний шлях до assets в Android проекті
-# Було: ${CMAKE_SOURCE_DIR}/../../assets
-# Стало: ${CMAKE_SOURCE_DIR}/../../main/assets
 set(ANDROID_ASSETS_DIR "${CMAKE_SOURCE_DIR}/../../main/assets")
 
 message(STATUS "Looking for shaders in: ${SHADER_DIR}")
@@ -40,7 +36,6 @@ if(NOT EXISTS "${SHADER_DIR}/shader.frag")
     message(FATAL_ERROR "shader.frag not found at: ${SHADER_DIR}/shader.frag")
 endif()
 
-# Шукаємо glslc компілятор
 find_program(GLSLC glslc HINTS
         $ENV{VULKAN_SDK}/bin
         $ENV{ANDROID_NDK}/shader-tools/linux-x86_64
@@ -54,7 +49,6 @@ if(NOT GLSLC)
 else()
     message(STATUS "glslc found: ${GLSLC}")
 
-    # Компілюємо шейдери
     add_custom_command(
             OUTPUT ${SHADER_OUTPUT_DIR}/vert.spv
             COMMAND ${GLSLC} ${SHADER_DIR}/shader.vert -o ${SHADER_OUTPUT_DIR}/vert.spv
@@ -69,13 +63,11 @@ else()
             COMMENT "Compiling fragment shader"
     )
 
-    # Створюємо target для компіляції шейдерів
     add_custom_target(compile_shaders ALL
             DEPENDS ${SHADER_OUTPUT_DIR}/vert.spv ${SHADER_OUTPUT_DIR}/frag.spv
     )
 endif()
 
-# Створюємо бібліотеку
 add_library(main SHARED main.cpp)
 
 target_include_directories(main PRIVATE ${SDL_PATH}/include)
@@ -91,11 +83,9 @@ target_link_libraries(main PRIVATE
         ${ANDROID_LIB}
 )
 
-# Додаємо залежність від компіляції шейдерів
 if(GLSLC)
     add_dependencies(main compile_shaders)
 
-    # Копіюємо скомпільовані шейдери в ПРАВИЛЬНУ assets директорію
     add_custom_command(TARGET main POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory ${ANDROID_ASSETS_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SHADER_OUTPUT_DIR}/vert.spv ${ANDROID_ASSETS_DIR}/vert.spv
