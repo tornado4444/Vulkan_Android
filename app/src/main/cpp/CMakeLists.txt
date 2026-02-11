@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SDL_PATH "${CMAKE_SOURCE_DIR}/../../../../libraries/SDL3-3.4.0")
+set(GLM_PATH "${CMAKE_SOURCE_DIR}/../../../../libraries/glm-1.0.3")
 
 if(NOT EXISTS ${SDL_PATH})
     message(FATAL_ERROR "SDL3 not found: ${SDL_PATH}")
@@ -62,15 +63,21 @@ else()
             DEPENDS ${SHADER_DIR}/shader.frag
             COMMENT "Compiling fragment shader"
     )
+    add_custom_command(
+            OUTPUT ${SHADER_OUTPUT_DIR}/comp.spv
+            COMMAND ${GLSLC} ${SHADER_DIR}/shader.comp -o ${SHADER_OUTPUT_DIR}/comp.spv
+            DEPENDS ${SHADER_DIR}/shader.comp
+            COMMENT "Compiling compute shader"
+    )
 
     add_custom_target(compile_shaders ALL
-            DEPENDS ${SHADER_OUTPUT_DIR}/vert.spv ${SHADER_OUTPUT_DIR}/frag.spv
+            DEPENDS ${SHADER_OUTPUT_DIR}/vert.spv ${SHADER_OUTPUT_DIR}/frag.spv ${SHADER_OUTPUT_DIR}/comp.spv
     )
 endif()
 
-add_library(main SHARED main.cpp)
+add_library(main SHARED main.cpp Render.cpp)
 
-target_include_directories(main PRIVATE ${SDL_PATH}/include)
+target_include_directories(main PRIVATE ${SDL_PATH}/include ${GLM_PATH})
 
 find_library(VULKAN_LIB vulkan REQUIRED)
 find_library(LOG_LIB log REQUIRED)
@@ -90,6 +97,7 @@ if(GLSLC)
             COMMAND ${CMAKE_COMMAND} -E make_directory ${ANDROID_ASSETS_DIR}
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SHADER_OUTPUT_DIR}/vert.spv ${ANDROID_ASSETS_DIR}/vert.spv
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SHADER_OUTPUT_DIR}/frag.spv ${ANDROID_ASSETS_DIR}/frag.spv
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${SHADER_OUTPUT_DIR}/comp.spv ${ANDROID_ASSETS_DIR}/comp.spv
             COMMAND ${CMAKE_COMMAND} -E echo "Shaders copied to: ${ANDROID_ASSETS_DIR}"
             COMMENT "Copying compiled shaders to Android assets directory"
             VERBATIM

@@ -12,6 +12,7 @@ class MainActivity : SDLActivity() {
 
         copyAssetToFile("vert.spv")
         copyAssetToFile("frag.spv")
+        copyAssetToFile("comp.spv");
 
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "super.onCreate finished")
